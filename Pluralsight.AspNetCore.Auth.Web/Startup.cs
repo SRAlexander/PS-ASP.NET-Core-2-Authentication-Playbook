@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System.Collections.Generic;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.DependencyInjection;
+using Pluralsight.AspNetCore.Auth.Web.Services;
 
 namespace Pluralsight.AspNetCore.Auth.Web
 {
@@ -13,6 +16,17 @@ namespace Pluralsight.AspNetCore.Auth.Web
             services.AddMvc(options => {
                 options.Filters.Add(new RequireHttpsAttribute());
             });
+
+            var users = new Dictionary<string, string> {{"Chris", "password"}};
+            services.AddSingleton<IUserService>(new DummyUserService(users));
+
+            services.AddAuthentication(options =>
+                    {
+                        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                        options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                        options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    })
+                .AddCookie(options => { options.LoginPath = "/auth/signin"; });
         }
         
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -26,6 +40,7 @@ namespace Pluralsight.AspNetCore.Auth.Web
 
             app.UseStaticFiles();
 
+            app.UseAuthentication();
             app.UseMvc();
         }
     }
